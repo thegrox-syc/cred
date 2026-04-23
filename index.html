@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Facturación a Crédito</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://apis.google.com/js/api.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161921;
+    --surface2: #1e2230;
+    --border: #2a2f42;
+    --accent: #f0b429;
+    --accent2: #e07b39;
+    --green: #34d399;
+    --red: #f87171;
+    --text: #e8eaf2;
+    --muted: #6b7280;
+    --white: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--white); }
+  .header-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 24px 40px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 10px 22px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+    top: 1px;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  /* CONTENT */
+  .content { padding: 32px 40px; max-width: 1200px; margin: 0 auto; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* FORM SECTION */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 22px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    padding: 11px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(240,180,41,0.1);
+  }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* PRODUCTOS */
+  .products-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .products-table table { width: 100%; border-collapse: collapse; }
+  .products-table th {
+    background: var(--surface2);
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .products-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .products-table tr:last-child td { border-bottom: none; }
+  .products-table input {
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 6px 8px;
+    width: 100%;
+    border-radius: 6px;
+  }
+  .products-table input:focus {
+    background: var(--surface2);
+    border-color: var(--accent);
+  }
+
+  .btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--red);
+    font-size: 1.1rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .btn-icon:hover { background: rgba(248,113,113,0.1); }
+
+  .btn-add {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    margin-bottom: 24px;
+  }
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* TOTALES */
+  .totals-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .total-row.main {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+  .total-row.saldo {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--red);
+  }
+  .total-row.pagado { color: var(--green); font-weight: 600; font-size: 1rem; }
+
+  .amount {
+    font-family: 'DM Mono', monospace;
+    font-size: inherit;
+  }
+
+  /* ABONOS */
+  .abono-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .abono-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .abono-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+    align-items: center;
+  }
+  .abono-item:last-child { border-bottom: none; }
+  .abono-item .fecha { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.78rem; }
+  .abono-item .monto { color: var(--green); font-family: 'DM Mono', monospace; font-weight: 600; }
+  .abono-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    padding: 10px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .empty-state {
+    text-align: center;
+    padding: 30px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  /* BOTONES */
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { background: #d9a020; transform: translateY(-1px); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger {
+    background: rgba(248,113,113,0.1);
+    color: var(--red);
+    border: 1px solid rgba(248,113,113,0.2);
+  }
+  .btn-danger:hover { background: rgba(248,113,113,0.2); }
+  .btn-green {
+    background: rgba(52,211,153,0.1);
+    color: var(--green);
+    border: 1px solid rgba(52,211,153,0.2);
+  }
+  .btn-green:hover { background: rgba(52,211,153,0.2); }
+
+  /* LISTA DE FACTURAS */
+  .facturas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .factura-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .factura-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .factura-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+  }
+  .factura-card.pagada::before { background: var(--green); }
+  .factura-card.vencida::before { background: var(--red); }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .card-num { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: var(--accent); font-weight: 500; }
+  .status-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .badge-pendiente { background: rgba(240,180,41,0.15); color: var(--accent); }
+  .badge-pagada { background: rgba(52,211,153,0.15); color: var(--green); }
+  .badge-vencida { background: rgba(248,113,113,0.15); color: var(--red); }
+  .card-name { font-size: 1rem; font-weight: 600; color: var(--white); margin-bottom: 4px; }
+  .card-date { font-size: 0.78rem; color: var(--muted); margin-bottom: 14px; }
+  .card-amounts { display: flex; justify-content: space-between; }
+  .card-amount-item { display: flex; flex-direction: column; gap: 2px; }
+  .card-amount-label { font-size: 0.68rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.06em; }
+  .card-amount-val { font-family: 'DM Mono', monospace; font-size: 0.95rem; font-weight: 600; }
+  .progress-bar { margin-top: 14px; background: var(--surface2); border-radius: 4px; height: 5px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; background: var(--green); transition: width 0.4s; }
+
+  /* MODAL / DETALLE */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 32px;
+  }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--white); }
+  .btn-close { background: none; border: none; color: var(--muted); font-size: 1.4rem; cursor: pointer; }
+  .btn-close:hover { color: var(--white); }
+
+  /* TICKET IMPRIMIBLE */
+  @media print {
+    body { background: #fff !important; color: #000 !important; }
+    .no-print { display: none !important; }
+    .ticket {
+      width: 80mm;
+      margin: 0 auto;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: #000;
+      padding: 8px;
+    }
+    .ticket-line { border-top: 1px dashed #000; margin: 6px 0; }
+    .ticket-center { text-align: center; }
+    .ticket-row { display: flex; justify-content: space-between; }
+    .ticket-bold { font-weight: bold; }
+    .ticket-title { font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 6px; }
+    .ticket-big { font-size: 13px; font-weight: bold; }
+  }
+
+  .ticket-preview {
+    background: #fff;
+    color: #000;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    margin: 0 auto;
+  }
+  .ticket-preview .t-center { text-align: center; margin-bottom: 4px; }
+  .ticket-preview .t-line { border-top: 1px dashed #aaa; margin: 8px 0; }
+  .ticket-preview .t-row { display: flex; justify-content: space-between; margin: 3px 0; font-size: 11px; }
+  .ticket-preview .t-bold { font-weight: 700; }
+  .ticket-preview .t-title { font-size: 15px; font-weight: 900; text-align: center; margin-bottom: 2px; }
+  .ticket-preview .t-sub { font-size: 10px; text-align: center; color: #666; margin-bottom: 8px; }
+  .ticket-preview .t-big { font-size: 13px; font-weight: 700; }
+
+  .search-bar {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    padding: 11px 16px;
+    width: 100%;
+    outline: none;
+    margin-bottom: 24px;
+  }
+  .search-bar:focus { border-color: var(--accent); }
+
+  .stat-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .stat-label { font-size: 0.72rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 6px; }
+  .stat-val { font-family: 'DM Mono', monospace; font-size: 1.3rem; font-weight: 700; color: var(--white); }
+  .stat-val.yellow { color: var(--accent); }
+  .stat-val.green { color: var(--green); }
+  .stat-val.red { color: var(--red); }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; margin-left: 6px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 30px; right: 30px;
+    background: var(--surface);
+    border: 1px solid var(--green);
+    color: var(--green);
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    z-index: 9999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✓ Operación exitosa</div>
+
+<header class="header no-print">
+  <div class="logo">Créd<span>Manager</span></div>
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <button id="syncBtn" class="btn btn-secondary" onclick="syncWithDrive()" style="font-size: 0.8rem; padding: 8px 12px;">☁ Sincronizar con Google Drive</button>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+</header>
+
+<nav class="tabs no-print">
+  <button class="tab-btn active" onclick="showTab('nueva')">＋ Nueva Factura</button>
+  <button class="tab-btn" onclick="showTab('facturas')">📋 Mis Facturas</button>
+</nav>
+
+<div class="content">
+
+  <!-- TAB: NUEVA FACTURA -->
+  <div class="tab-panel active" id="tab-nueva">
+    <div class="section-title">Datos del Cliente</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nombre completo *</label>
+        <input type="text" id="cli_nombre" placeholder="Ej: María García López">
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="tel" id="cli_telefono" placeholder="Ej: 300 123 4567">
+      </div>
+      <div class="form-group">
+        <label>Cédula / NIT</label>
+        <input type="text" id="cli_cedula" placeholder="Ej: 1.234.567.890">
+      </div>
+      <div class="form-group">
+        <label>Dirección</label>
+        <input type="text" id="cli_direccion" placeholder="Ej: Cra 45 # 12-34">
+      </div>
+      <div class="form-group full">
+        <label>Notas adicionales</label>
+        <textarea id="cli_notas" placeholder="Observaciones del cliente..."></textarea>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-title">Productos / Servicios</div>
+
+    <div class="products-table">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40%">Descripción</th>
+            <th style="width:15%">Cant.</th>
+            <th style="width:22%">Precio Unit.</th>
+            <th style="width:18%">Subtotal</th>
+            <th style="width:5%"></th>
+          </tr>
+        </thead>
+        <tbody id="productosBody">
+          <tr id="prod_0">
+            <td><input type="text" placeholder="Descripción del producto" onchange="calcTotal()"></td>
+            <td><input type="number" value="1" min="1" style="width:60px" onchange="calcTotal()" oninput="calcTotal()"></td>
+            <td><input type="number" value="0" min="0" step="0.01" style="width:110px" onchange="calcTotal()" oninput="calcTotal()"></td>
+            <td><span class="amount subtotal" style="font-family:'DM Mono',monospace;color:#6b7280">$0.00</span></td>
+            <td><button class="btn-icon" onclick="removeProducto(0)" title="Eliminar">✕</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <button class="btn-add" onclick="addProducto()">＋ Agregar producto o servicio</button>
+
+    <div class="form-grid" style="max-width:520px;margin-bottom:20px">
+      <div class="form-group">
+        <label>Descuento ($)</label>
+        <input type="number" id="descuento" value="0" min="0" step="0.01" oninput="calcTotal()">
+      </div>
+      <div class="form-group">
+        <label>IVA (%)</label>
+        <select id="iva" onchange="calcTotal()">
+          <option value="0">Sin IVA (0%)</option>
+          <option value="5">5%</option>
+          <option value="19" selected>19%</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fecha de Vencimiento</label>
+        <input type="date" id="fechaVenc">
+      </div>
+      <div class="form-group">
+        <label>Cuotas pactadas</label>
+        <input type="number" id="cuotas" value="1" min="1" placeholder="Nº de cuotas">
+      </div>
+    </div>
+
+    <div class="totals-box" style="max-width:520px">
+      <div class="total-row"><span>Subtotal</span><span class="amount" id="tot_sub">$0.00</span></div>
+      <div class="total-row"><span>Descuento</span><span class="amount" id="tot_desc" style="color:var(--red)">−$0.00</span></div>
+      <div class="total-row"><span>IVA</span><span class="amount" id="tot_iva">$0.00</span></div>
+      <div class="total-row main"><span>TOTAL CRÉDITO</span><span class="amount" id="tot_total" style="color:var(--accent)">$0.00</span></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="guardarFactura()">💾 Guardar Factura</button>
+      <button class="btn btn-secondary" onclick="limpiarFormulario()">↺ Limpiar</button>
+    </div>
+  </div>
+
+  <!-- TAB: FACTURAS -->
+  <div class="tab-panel" id="tab-facturas">
+    <div class="stat-cards" id="statCards"></div>
+    <input class="search-bar" id="searchBar" placeholder="🔍 Buscar por nombre, cédula o número de factura..." oninput="renderFacturas()">
+    <div class="facturas-grid" id="facturasGrid"></div>
+  </div>
+
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Detalle de Factura</div>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ZONA IMPRESIÓN -->
+<div id="printArea" style="display:none"></div>
+
+<script>
+// Google Drive API Configuration
+// IMPORTANT: Replace these with your actual Google API credentials
+// 1. Go to https://console.cloud.google.com/
+// 2. Create a new project or select existing
+// 3. Enable Google Drive API
+// 4. Create OAuth 2.0 credentials (Web application)
+// 5. Add your domain to authorized origins (for local development: http://localhost or file://)
+// 6. Create an API Key
+// 7. Replace CLIENT_ID and API_KEY below
+const CLIENT_ID = '600856892505-mek1hb8kujhpsp2a4coq5f0lune8ot22.apps.googleusercontent.com'; // Replace with your Google OAuth 2.0 Client ID
+const API_KEY = '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'; // Replace with your Google API Key
+const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+let isSignedIn = false;
+let fileId = null; // ID of the data file in Drive
+
+// Initialize Google API
+function initGoogleAPI() {
+  gapi.load('client:auth2', () => {
+    gapi.client.init({
+      apiKey: API_KEY,
+      clientId: CLIENT_ID,
+      discoveryDocs: DISCOVERY_DOCS,
+      scope: SCOPES
+    }).then(() => {
+      gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+      updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+    });
+  });
+}
+
+// Update sign-in status
+function updateSigninStatus(isSignedIn) {
+  this.isSignedIn = isSignedIn;
+  const syncBtn = document.getElementById('syncBtn');
+  if (isSignedIn) {
+    syncBtn.textContent = '☁ Sincronizar';
+    syncBtn.className = 'btn btn-green';
+    loadFromDrive();
+  } else {
+    syncBtn.textContent = '☁ Iniciar Sesión';
+    syncBtn.className = 'btn btn-secondary';
+  }
+}
+
+// Sign in/out
+function signInOut() {
+  if (isSignedIn) {
+    gapi.auth2.getAuthInstance().signOut();
+  } else {
+    gapi.auth2.getAuthInstance().signIn();
+  }
+}
+
+// Sync with Drive (called by button)
+function syncWithDrive() {
+  if (!isSignedIn) {
+    signInOut();
+  } else {
+    saveToDrive();
+  }
+}
+
+// Load data from Google Drive
+async function loadFromDrive() {
+  if (!isSignedIn) return;
+  try {
+    // Find existing file
+    const response = await gapi.client.drive.files.list({
+      q: "name='credit_manager_data.json' and trashed=false",
+      fields: 'files(id, name)'
+    });
+    const files = response.result.files;
+    if (files.length > 0) {
+      fileId = files[0].id;
+      // Download file content
+      const downloadResponse = await gapi.client.drive.files.get({
+        fileId: fileId,
+        alt: 'media'
+      });
+      const data = JSON.parse(downloadResponse.body);
+      facturas = data.facturas || [];
+      localStorage.setItem('facturas_credito', JSON.stringify(facturas));
+      renderFacturas();
+      showToast('✓ Datos cargados desde Google Drive');
+    } else {
+      // No file exists, save current data
+      saveToDrive();
+    }
+  } catch (error) {
+    console.error('Error loading from Drive:', error);
+    showToast('⚠ Error al cargar desde Google Drive', true);
+  }
+}
+
+// Save data to Google Drive
+async function saveToDrive() {
+  if (!isSignedIn) return;
+  try {
+    const data = {
+      facturas: facturas,
+      lastSync: new Date().toISOString()
+    };
+    const fileContent = JSON.stringify(data, null, 2);
+    
+    if (fileId) {
+      // Update existing file
+      await gapi.client.request({
+        path: `/upload/drive/v3/files/${fileId}`,
+        method: 'PATCH',
+        params: {
+          uploadType: 'media'
+        },
+        body: fileContent
+      });
+    } else {
+      // Create new file
+      const fileMetadata = {
+        name: 'credit_manager_data.json',
+        mimeType: 'application/json'
+      };
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
+      form.append('file', new Blob([fileContent], { type: 'application/json' }));
+      
+      const response = await gapi.client.drive.files.create({
+        resource: fileMetadata,
+        media: {
+          mimeType: 'application/json',
+          body: fileContent
+        }
+      });
+      fileId = response.result.id;
+    }
+    showToast('✓ Datos guardados en Google Drive');
+  } catch (error) {
+    console.error('Error saving to Drive:', error);
+    showToast('⚠ Error al guardar en Google Drive', true);
+  }
+}
+
+// Initialize on load
+window.onload = function() {
+  initGoogleAPI();
+  calcTotal();
+};
+
+let productCount = 1;
+let facturas = JSON.parse(localStorage.getItem('facturas_credito') || '[]');
+let facturaEditandoId = null;
+
+// Fecha actual
+const now = new Date();
+document.getElementById('headerDate').textContent = now.toLocaleDateString('es-CO', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+
+// Default fecha vencimiento: 30 días
+const fechaVencInput = document.getElementById('fechaVenc');
+const def = new Date(); def.setDate(def.getDate()+30);
+fechaVencInput.value = def.toISOString().split('T')[0];
+
+function showTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'facturas') renderFacturas();
+}
+
+function formatCOP(n) {
+  return '$' + Number(n).toLocaleString('es-CO', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+
+function calcTotal() {
+  let sub = 0;
+  const rows = document.querySelectorAll('#productosBody tr');
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length < 3) return;
+    const cant = parseFloat(inputs[1].value) || 0;
+    const precio = parseFloat(inputs[2].value) || 0;
+    const st = cant * precio;
+    sub += st;
+    const stEl = row.querySelector('.subtotal');
+    if (stEl) stEl.textContent = formatCOP(st);
+  });
+  const desc = parseFloat(document.getElementById('descuento').value) || 0;
+  const ivaPct = parseFloat(document.getElementById('iva').value) || 0;
+  const base = sub - desc;
+  const iva = base * ivaPct / 100;
+  const total = base + iva;
+  document.getElementById('tot_sub').textContent = formatCOP(sub);
+  document.getElementById('tot_desc').textContent = '−' + formatCOP(desc);
+  document.getElementById('tot_iva').textContent = formatCOP(iva);
+  document.getElementById('tot_total').textContent = formatCOP(total);
+  return total;
+}
+
+function addProducto() {
+  const id = productCount++;
+  const tbody = document.getElementById('productosBody');
+  const tr = document.createElement('tr');
+  tr.id = 'prod_' + id;
+  tr.innerHTML = `
+    <td><input type="text" placeholder="Descripción del producto" onchange="calcTotal()"></td>
+    <td><input type="number" value="1" min="1" style="width:60px" oninput="calcTotal()"></td>
+    <td><input type="number" value="0" min="0" step="0.01" style="width:110px" oninput="calcTotal()"></td>
+    <td><span class="amount subtotal" style="font-family:'DM Mono',monospace;color:#6b7280">$0.00</span></td>
+    <td><button class="btn-icon" onclick="removeProducto(${id})">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function removeProducto(id) {
+  const el = document.getElementById('prod_' + id);
+  if (el) { el.remove(); calcTotal(); }
+}
+
+function getProductos() {
+  const rows = document.querySelectorAll('#productosBody tr');
+  const productos = [];
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length < 3) return;
+    const desc = inputs[0].value.trim();
+    const cant = parseFloat(inputs[1].value) || 0;
+    const precio = parseFloat(inputs[2].value) || 0;
+    if (desc || precio > 0) productos.push({ desc, cant, precio, sub: cant * precio });
+  });
+  return productos;
+}
+
+function guardarFactura() {
+  const nombre = document.getElementById('cli_nombre').value.trim();
+  if (!nombre) { showToast('⚠ Ingresa el nombre del cliente', true); return; }
+  const productos = getProductos();
+  if (!productos.length) { showToast('⚠ Agrega al menos un producto', true); return; }
+
+  const total = calcTotal();
+  const desc = parseFloat(document.getElementById('descuento').value) || 0;
+  const ivaPct = parseFloat(document.getElementById('iva').value) || 0;
+
+  const factura = {
+    id: 'F-' + Date.now(),
+    numero: String(facturas.length + 1).padStart(4, '0'),
+    fecha: new Date().toISOString(),
+    cliente: {
+      nombre: nombre,
+      telefono: document.getElementById('cli_telefono').value.trim(),
+      cedula: document.getElementById('cli_cedula').value.trim(),
+      direccion: document.getElementById('cli_direccion').value.trim(),
+      notas: document.getElementById('cli_notas').value.trim(),
+    },
+    productos: productos,
+    descuento: desc,
+    ivaPct: ivaPct,
+    total: total,
+    fechaVencimiento: document.getElementById('fechaVenc').value,
+    cuotas: parseInt(document.getElementById('cuotas').value) || 1,
+    abonos: [],
+  };
+
+  facturas.push(factura);
+  saveFacturas();
+  showToast('✓ Factura #' + factura.numero + ' guardada');
+  limpiarFormulario();
+  showTab_direct('facturas');
+}
+
+function showTab_direct(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.tab-btn')[1].classList.add('active');
+  renderFacturas();
+}
+
+function saveFacturas() {
+  localStorage.setItem('facturas_credito', JSON.stringify(facturas));
+  if (isSignedIn) {
+    saveToDrive();
+  }
+}
+
+function limpiarFormulario() {
+  document.getElementById('cli_nombre').value = '';
+  document.getElementById('cli_telefono').value = '';
+  document.getElementById('cli_cedula').value = '';
+  document.getElementById('cli_direccion').value = '';
+  document.getElementById('cli_notas').value = '';
+  document.getElementById('descuento').value = 0;
+  document.getElementById('iva').value = '19';
+  document.getElementById('cuotas').value = 1;
+  const def2 = new Date(); def2.setDate(def2.getDate()+30);
+  document.getElementById('fechaVenc').value = def2.toISOString().split('T')[0];
+  document.getElementById('productosBody').innerHTML = `
+    <tr id="prod_0">
+      <td><input type="text" placeholder="Descripción del producto" onchange="calcTotal()"></td>
+      <td><input type="number" value="1" min="1" style="width:60px" oninput="calcTotal()"></td>
+      <td><input type="number" value="0" min="0" step="0.01" style="width:110px" oninput="calcTotal()"></td>
+      <td><span class="amount subtotal" style="font-family:'DM Mono',monospace;color:#6b7280">$0.00</span></td>
+      <td><button class="btn-icon" onclick="removeProducto(0)">✕</button></td>
+    </tr>`;
+  productCount = 1;
+  calcTotal();
+}
+
+function getEstado(f) {
+  const pagado = f.abonos.reduce((a, b) => a + b.monto, 0);
+  if (pagado >= f.total) return 'pagada';
+  if (f.fechaVencimiento && new Date(f.fechaVencimiento) < new Date()) return 'vencida';
+  return 'pendiente';
+}
+
+function renderFacturas() {
+  const q = (document.getElementById('searchBar')?.value || '').toLowerCase();
+  const grid = document.getElementById('facturasGrid');
+
+  const filtered = facturas.filter(f =>
+    f.cliente.nombre.toLowerCase().includes(q) ||
+    f.cliente.cedula.toLowerCase().includes(q) ||
+    f.numero.includes(q)
+  );
+
+  // Stats
+  const totalDeuda = facturas.reduce((a, f) => {
+    const pag = f.abonos.reduce((x, b) => x + b.monto, 0);
+    return a + Math.max(0, f.total - pag);
+  }, 0);
+  const totalCobrado = facturas.reduce((a, f) => a + f.abonos.reduce((x, b) => x + b.monto, 0), 0);
+  const totalFacturado = facturas.reduce((a, f) => a + f.total, 0);
+  const vencidas = facturas.filter(f => getEstado(f) === 'vencida').length;
+
+  document.getElementById('statCards').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Facturas</div><div class="stat-val yellow">${facturas.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Facturado</div><div class="stat-val">${formatCOP(totalFacturado)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Cobrado</div><div class="stat-val green">${formatCOP(totalCobrado)}</div></div>
+    <div class="stat-card"><div class="stat-label">Por Cobrar</div><div class="stat-val red">${formatCOP(totalDeuda)}</div></div>
+    <div class="stat-card"><div class="stat-label">Vencidas</div><div class="stat-val red">${vencidas}</div></div>
+  `;
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty-state">No hay facturas registradas aún.</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.slice().reverse().map(f => {
+    const pagado = f.abonos.reduce((a, b) => a + b.monto, 0);
+    const saldo = Math.max(0, f.total - pagado);
+    const estado = getEstado(f);
+    const pct = Math.min(100, (pagado / f.total) * 100);
+    const badgeClass = { pendiente: 'badge-pendiente', pagada: 'badge-pagada', vencida: 'badge-vencida' }[estado];
+    const badgeLabel = { pendiente: 'Pendiente', pagada: '✓ Pagada', vencida: '⚠ Vencida' }[estado];
+    return `
+      <div class="factura-card ${estado}" onclick="openFactura('${f.id}')">
+        <div class="card-header">
+          <div class="card-num">Factura #${f.numero}</div>
+          <span class="status-badge ${badgeClass}">${badgeLabel}</span>
+        </div>
+        <div class="card-name">${f.cliente.nombre}</div>
+        <div class="card-date">${new Date(f.fecha).toLocaleDateString('es-CO')} · Vence: ${f.fechaVencimiento || 'N/A'}</div>
+        <div class="card-amounts">
+          <div class="card-amount-item">
+            <span class="card-amount-label">Total</span>
+            <span class="card-amount-val">${formatCOP(f.total)}</span>
+          </div>
+          <div class="card-amount-item">
+            <span class="card-amount-label">Abonado</span>
+            <span class="card-amount-val" style="color:var(--green)">${formatCOP(pagado)}</span>
+          </div>
+          <div class="card-amount-item">
+            <span class="card-amount-label">Saldo</span>
+            <span class="card-amount-val" style="color:var(--red)">${formatCOP(saldo)}</span>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openFactura(id) {
+  facturaEditandoId = id;
+  const f = facturas.find(x => x.id === id);
+  if (!f) return;
+  const pagado = f.abonos.reduce((a, b) => a + b.monto, 0);
+  const saldo = Math.max(0, f.total - pagado);
+  const estado = getEstado(f);
+
+  const listaAbonos = f.abonos.length ? `
+    <div class="abono-list">
+      <div class="abono-header"><span>Fecha</span><span>Método</span><span>Monto</span><span></span></div>
+      ${f.abonos.map((a, i) => `
+        <div class="abono-item">
+          <span class="fecha">${a.fecha}</span>
+          <span>${a.metodo}</span>
+          <span class="monto">+${formatCOP(a.monto)}</span>
+          <button class="btn-icon" onclick="eliminarAbono('${id}',${i})" title="Eliminar abono">✕</button>
+        </div>
+      `).join('')}
+    </div>
+  ` : '<div class="empty-state" style="margin-bottom:16px">Sin abonos registrados</div>';
+
+  document.getElementById('modalTitle').textContent = 'Factura #' + f.numero;
+  document.getElementById('modalBody').innerHTML = `
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px">
+      <div>
+        <div style="font-size:0.72rem;text-transform:uppercase;color:var(--muted);margin-bottom:2px">Cliente</div>
+        <div style="font-weight:600;font-size:1rem">${f.cliente.nombre}</div>
+        ${f.cliente.cedula ? `<div style="font-size:0.82rem;color:var(--muted)">${f.cliente.cedula}</div>` : ''}
+        ${f.cliente.telefono ? `<div style="font-size:0.82rem;color:var(--muted)">📞 ${f.cliente.telefono}</div>` : ''}
+      </div>
+      <div>
+        <div style="font-size:0.72rem;text-transform:uppercase;color:var(--muted);margin-bottom:2px">Fecha / Vence</div>
+        <div>${new Date(f.fecha).toLocaleDateString('es-CO')}</div>
+        <div style="font-size:0.82rem;color:var(--muted)">${f.fechaVencimiento || 'Sin vencimiento'}</div>
+      </div>
+    </div>
+
+    <div class="products-table" style="margin-bottom:16px">
+      <table>
+        <thead><tr><th>Descripción</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
+        <tbody>
+          ${f.productos.map(p => `<tr>
+            <td>${p.desc}</td>
+            <td>${p.cant}</td>
+            <td>${formatCOP(p.precio)}</td>
+            <td style="font-family:'DM Mono',monospace">${formatCOP(p.sub)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals-box" style="margin-bottom:20px">
+      <div class="total-row"><span>Descuento</span><span class="amount">−${formatCOP(f.descuento)}</span></div>
+      <div class="total-row"><span>IVA (${f.ivaPct}%)</span><span class="amount">${formatCOP((f.total - (f.total/(1+f.ivaPct/100)) < 0 ? 0 : 0))}</span></div>
+      <div class="total-row main"><span>TOTAL</span><span class="amount" style="color:var(--accent)">${formatCOP(f.total)}</span></div>
+      <div class="total-row pagado"><span>Total Abonado</span><span class="amount">+${formatCOP(pagado)}</span></div>
+      <div class="total-row saldo"><span>Saldo Pendiente</span><span class="amount">${formatCOP(saldo)}</span></div>
+    </div>
+
+    <div class="section-title" style="margin-bottom:14px">Registrar Abono</div>
+    ${saldo > 0 ? `
+    <div class="abono-form">
+      <div class="form-group">
+        <label>Monto del Abono</label>
+        <input type="number" id="abonoMonto" min="0" step="0.01" max="${saldo}" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>Método de Pago</label>
+        <select id="abonoMetodo">
+          <option>Efectivo</option>
+          <option>Transferencia</option>
+          <option>Nequi</option>
+          <option>Daviplata</option>
+          <option>Tarjeta</option>
+          <option>Cheque</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <button class="btn btn-green" onclick="agregarAbono('${id}')">＋ Abonar</button>
+    </div>
+    ` : `<div style="color:var(--green);font-weight:600;margin-bottom:16px">✓ Factura completamente pagada</div>`}
+
+    ${listaAbonos}
+
+    <hr class="divider">
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="imprimirTicket('${id}')">🖨 Imprimir Factura</button>
+      <button class="btn btn-danger" onclick="eliminarFactura('${id}')">🗑 Eliminar</button>
+    </div>
+  `;
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  facturaEditandoId = null;
+}
+
+function agregarAbono(id) {
+  const monto = parseFloat(document.getElementById('abonoMonto').value);
+  const metodo = document.getElementById('abonoMetodo').value;
+  if (!monto || monto <= 0) { showToast('⚠ Ingresa un monto válido', true); return; }
+  const f = facturas.find(x => x.id === id);
+  const saldo = f.total - f.abonos.reduce((a,b) => a+b.monto, 0);
+  if (monto > saldo + 0.01) { showToast('⚠ El abono supera el saldo', true); return; }
+  f.abonos.push({ monto, metodo, fecha: new Date().toLocaleDateString('es-CO') });
+  saveFacturas();
+  showToast('✓ Abono de ' + formatCOP(monto) + ' registrado');
+  openFactura(id);
+  renderFacturas();
+}
+
+function eliminarAbono(id, idx) {
+  if (!confirm('¿Eliminar este abono?')) return;
+  const f = facturas.find(x => x.id === id);
+  f.abonos.splice(idx, 1);
+  saveFacturas();
+  openFactura(id);
+  renderFacturas();
+  showToast('Abono eliminado');
+}
+
+function eliminarFactura(id) {
+  if (!confirm('¿Eliminar esta factura? Esta acción no se puede deshacer.')) return;
+  facturas = facturas.filter(x => x.id !== id);
+  saveFacturas();
+  closeModal();
+  renderFacturas();
+  showToast('Factura eliminada');
+}
+
+function imprimirTicket(id) {
+  const f = facturas.find(x => x.id === id);
+  if (!f) return;
+  const pagado = f.abonos.reduce((a, b) => a + b.monto, 0);
+  const saldo = Math.max(0, f.total - pagado);
+  const estado = getEstado(f);
+
+  const ventana = window.open('', '_blank', 'width=400,height=700');
+  ventana.document.write(`<!DOCTYPE html><html><head>
+  <meta charset="UTF-8">
+  <title>Factura #${f.numero}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Courier New', monospace; font-size: 11px; padding: 10px; width: 80mm; }
+    .center { text-align: center; }
+    .bold { font-weight: bold; }
+    .line { border-top: 1px dashed #000; margin: 6px 0; }
+    .row { display: flex; justify-content: space-between; margin: 2px 0; }
+    .title { font-size: 16px; font-weight: 900; text-align: center; margin-bottom: 2px; }
+    .sub { font-size: 10px; text-align: center; color: #555; }
+    .big { font-size: 13px; font-weight: 700; }
+    .green { color: #111; }
+    table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 4px 0; }
+    th { border-bottom: 1px solid #000; padding: 2px 0; text-align: left; }
+    td { padding: 2px 0; }
+    td:last-child { text-align: right; }
+    .no-print { text-align:center; margin-top: 16px; }
+    .btn-print { padding: 8px 20px; background: #000; color: #fff; border: none; cursor: pointer; font-size: 12px; border-radius: 4px; }
+    @media print { .no-print { display:none; } }
+  </style></head><body>
+  <div class="title">FACTURA A CRÉDITO</div>
+  <div class="sub">─────────────────────────</div>
+  <div class="center" style="margin:4px 0">Nº <strong>#${f.numero}</strong></div>
+  <div class="line"></div>
+  <div class="row"><span>Fecha:</span><span>${new Date(f.fecha).toLocaleDateString('es-CO')}</span></div>
+  <div class="row"><span>Vence:</span><span>${f.fechaVencimiento || 'N/A'}</span></div>
+  <div class="row"><span>Cuotas:</span><span>${f.cuotas}</span></div>
+  <div class="line"></div>
+  <div class="bold" style="margin-bottom:3px">CLIENTE</div>
+  <div>${f.cliente.nombre}</div>
+  ${f.cliente.cedula ? `<div>CC/NIT: ${f.cliente.cedula}</div>` : ''}
+  ${f.cliente.telefono ? `<div>Tel: ${f.cliente.telefono}</div>` : ''}
+  ${f.cliente.direccion ? `<div>Dir: ${f.cliente.direccion}</div>` : ''}
+  <div class="line"></div>
+  <div class="bold" style="margin-bottom:3px">DETALLE</div>
+  <table>
+    <thead><tr><th>Descripción</th><th>Cant</th><th>Precio</th><th>Total</th></tr></thead>
+    <tbody>
+      ${f.productos.map(p => `<tr>
+        <td>${p.desc}</td>
+        <td>${p.cant}</td>
+        <td>$${Number(p.precio).toLocaleString('es-CO')}</td>
+        <td>$${Number(p.sub).toLocaleString('es-CO')}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  <div class="line"></div>
+  ${f.descuento > 0 ? `<div class="row"><span>Descuento:</span><span>−$${Number(f.descuento).toLocaleString('es-CO')}</span></div>` : ''}
+  ${f.ivaPct > 0 ? `<div class="row"><span>IVA (${f.ivaPct}%):</span><span>incluido</span></div>` : ''}
+  <div class="row big"><span>TOTAL:</span><span>$${Number(f.total).toLocaleString('es-CO')}</span></div>
+  <div class="line"></div>
+  <div class="bold" style="margin-bottom:3px">ABONOS</div>
+  ${f.abonos.length ? f.abonos.map(a => `
+    <div class="row"><span>${a.fecha} · ${a.metodo}</span><span>+$${Number(a.monto).toLocaleString('es-CO')}</span></div>
+  `).join('') : '<div>Sin abonos registrados</div>'}
+  <div class="line"></div>
+  <div class="row"><span>Total Abonado:</span><span>$${Number(pagado).toLocaleString('es-CO')}</span></div>
+  <div class="row big"><span>SALDO PENDIENTE:</span><span>$${Number(saldo).toLocaleString('es-CO')}</span></div>
+  <div class="line"></div>
+  ${f.cliente.notas ? `<div style="font-size:10px;margin-bottom:4px">Nota: ${f.cliente.notas}</div><div class="line"></div>` : ''}
+  <div class="center" style="margin-top:6px;font-size:10px">Estado: <strong>${{ pendiente:'PENDIENTE', pagada:'PAGADA ✓', vencida:'VENCIDA ⚠' }[estado]}</strong></div>
+  <div class="center" style="font-size:9px;margin-top:4px;color:#555">Gracias por su compra</div>
+  <div class="center" style="font-size:9px;color:#555">Generado por CrédManager</div>
+  <div class="no-print"><button class="btn-print" onclick="window.print()">🖨 Imprimir</button></div>
+  </body></html>`);
+  ventana.document.close();
+  setTimeout(() => ventana.print(), 400);
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = isError ? 'var(--red)' : 'var(--green)';
+  t.style.color = isError ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Close modal on overlay click
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+</script>
+</body>
+</html>
