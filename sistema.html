@@ -158,6 +158,7 @@
 <nav class="tabs no-print">
   <button class="tab-btn active" data-tab="nueva" onclick="showTab('nueva')">＋ Nueva Factura</button>
   <button class="tab-btn" data-tab="cotizacion" onclick="showTab('cotizacion')">📄 Cotización</button>
+  <button class="tab-btn" data-tab="empresa" onclick="showTab('empresa')">🏢 Empresa</button>
   <button class="tab-btn" data-tab="facturas" onclick="showTab('facturas')">📋 Mis Facturas</button>
 </nav>
 
@@ -323,6 +324,59 @@
     </div>
   </div>
 
+  <div class="tab-panel" id="tab-empresa">
+    <div class="section-title">Empresa emisora</div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre / Razón social</label>
+          <input type="text" id="cfg_nombre" placeholder="CDH Colombiana de Herrajes S.A.S.">
+        </div>
+        <div class="form-group">
+          <label>NIT</label>
+          <input type="text" id="cfg_nit" placeholder="901.663.615-2">
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="cfg_tel" placeholder="300 1096201">
+        </div>
+        <div class="form-group">
+          <label>Ciudad</label>
+          <input type="text" id="cfg_ciudad" placeholder="Barranquilla">
+        </div>
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" id="cfg_dir" placeholder="Cra 40 # 32-15, Barranquilla, Colombia">
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" id="cfg_email" placeholder="cdhcolombianadeherrajessas@gmail.com">
+        </div>
+        <div class="form-group">
+          <label>Página web / redes</label>
+          <input type="text" id="cfg_web" placeholder="@colombianadeherrajes">
+        </div>
+        <div class="form-group">
+          <label>Slogan (opcional)</label>
+          <input type="text" id="cfg_slogan" placeholder="Calidad en cada hilo">
+        </div>
+      </div>
+      <div class="form-grid" style="max-width:720px; margin-top: 10px;">
+        <div class="form-group">
+          <label>Prefijo de cotización</label>
+          <input type="text" id="cfg_prefix" placeholder="COT-">
+        </div>
+        <div class="form-group">
+          <label>Número siguiente</label>
+          <input type="number" id="cfg_nextnum" value="1" min="1">
+        </div>
+      </div>
+      <div class="action-bar">
+        <button class="btn btn-primary" onclick="saveCompanyConfig()">💾 Guardar empresa</button>
+      </div>
+    </div>
+  </div>
+
   <div class="tab-panel" id="tab-facturas">
     <div class="stat-cards" id="statCards"></div>
     <input class="search-bar" id="searchBar" placeholder="🔍 Buscar por nombre, cédula o número de factura..." oninput="renderFacturas()">
@@ -357,6 +411,7 @@ const company = {
   dir: 'Cra 40 # 32-15, Barranquilla, Colombia',
   email: 'cdhcolombianadeherrajessas@gmail.com',
   web: '@colombianadeherrajes',
+  slogan: 'Calidad en cada hilo',
   prefix: 'COT-',
   nextnum: 1,
   theme: '#007BFF',
@@ -373,6 +428,49 @@ function showTab(tabName) {
     if (btn.dataset.tab === tabName) btn.classList.add('active');
   });
   if (tabName === 'facturas') renderFacturas();
+}
+
+function loadCompanyConfig() {
+  const fields = {
+    nombre: 'cfg_nombre', nit: 'cfg_nit', tel: 'cfg_tel', ciudad: 'cfg_ciudad', dir: 'cfg_dir', email: 'cfg_email', web: 'cfg_web', slogan: 'cfg_slogan', prefix: 'cfg_prefix', nextnum: 'cfg_nextnum'
+  };
+  Object.entries(fields).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = company[key] || '';
+  });
+}
+
+function saveCompanyConfig() {
+  company.nombre = document.getElementById('cfg_nombre').value || company.nombre;
+  company.nit = document.getElementById('cfg_nit').value || company.nit;
+  company.tel = document.getElementById('cfg_tel').value || company.tel;
+  company.ciudad = document.getElementById('cfg_ciudad').value || company.ciudad;
+  company.dir = document.getElementById('cfg_dir').value || company.dir;
+  company.email = document.getElementById('cfg_email').value || company.email;
+  company.web = document.getElementById('cfg_web').value || company.web;
+  company.slogan = document.getElementById('cfg_slogan').value || company.slogan;
+  company.prefix = document.getElementById('cfg_prefix').value || company.prefix;
+  company.nextnum = parseInt(document.getElementById('cfg_nextnum').value) || company.nextnum;
+  setQuoteNum();
+  showToast('✓ Datos de la empresa actualizados');
+}
+
+function getCurrentCompany() {
+  const el = document.getElementById('cfg_nombre');
+  if (!el) return company;
+  return {
+    nombre: document.getElementById('cfg_nombre').value || company.nombre,
+    nit: document.getElementById('cfg_nit').value || company.nit,
+    tel: document.getElementById('cfg_tel').value || company.tel,
+    ciudad: document.getElementById('cfg_ciudad').value || company.ciudad,
+    dir: document.getElementById('cfg_dir').value || company.dir,
+    email: document.getElementById('cfg_email').value || company.email,
+    web: document.getElementById('cfg_web').value || company.web,
+    slogan: document.getElementById('cfg_slogan').value || company.slogan,
+    prefix: document.getElementById('cfg_prefix').value || company.prefix,
+    nextnum: parseInt(document.getElementById('cfg_nextnum').value) || company.nextnum,
+    theme: company.theme
+  };
 }
 
 function addProducto() {
@@ -766,10 +864,12 @@ function setQuoteDate() {
 }
 
 function setQuoteNum() {
-  document.getElementById('q-num').textContent = company.prefix + String(company.nextnum).padStart(3, '0');
+  const currentCompany = getCurrentCompany();
+  document.getElementById('q-num').textContent = currentCompany.prefix + String(currentCompany.nextnum).padStart(3, '0');
 }
 
 function printCotizacion() {
+  const currentCompany = getCurrentCompany();
   const q = document.getElementById('q-num').textContent;
   const d = document.getElementById('q-date').textContent.replace('Fecha: ', '');
   const cliente = {
@@ -798,7 +898,7 @@ function printCotizacion() {
   const total = subtotal + iva - desc;
   const obs = document.getElementById('cot-obs').value;
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${q}</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:0;padding:0}.page{max-width:780px;margin:0 auto;padding:24px 28px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid ${company.theme}}.logo-circle{width:64px;height:64px;border-radius:50%;background:${company.theme};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;overflow:hidden}.comp-name{font-size:18px;font-weight:700;color:#111}.comp-sub{font-size:10px;color:#555;margin-top:3px}.q-block{text-align:right}.q-num{font-size:20px;font-weight:700;color:#111}.q-date{font-size:11px;color:#777;margin-top:2px}.section-title{font-size:10px;font-weight:700;color:${company.theme};text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px;border-bottom:0.5px solid #e0e0e0;padding-bottom:4px}.cli-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 14px;font-size:11px}.cli-item label{color:#888;display:block}.cli-item span{color:#222;font-weight:500}.container{margin-bottom:14px}.container label{font-size:10px;color:#888;display:block;margin-bottom:2px}.container span{font-weight:500;color:#111}.table{width:100%;border-collapse:collapse;font-size:11px}th{background:#f5f5f2;text-align:left;padding:6px 8px;font-weight:700;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1px solid #ddd}td{padding:6px 8px;border-bottom:0.5px solid #eee}.totals{float:right;margin-top:10px;min-width:240px}.tot-row{display:flex;justify-content:space-between;gap:30px;font-size:11px;padding:3px 0}.tot-row.final{border-top:1.5px solid ${company.theme};margin-top:4px;padding-top:6px;font-size:14px;font-weight:700;color:#111}.footer{margin-top:36px;padding-top:12px;border-top:0.5px solid #ccc;text-align:center;font-size:10px;color:#888}.obs-box{background:#fafaf8;border:0.5px solid #ddd;border-radius:6px;padding:8px 12px;font-size:11px;color:#444;margin-top:6px}</style></head><body><div class="page"><div class="header"><div class="logo-circle">${company.nombre.substring(0,2).toUpperCase()}</div><div><div class="comp-name">${company.nombre}</div><div class="comp-sub">NIT: ${company.nit} · ${company.tel} · ${company.email}<br>${company.dir}${company.web ? ' · ' + company.web : ''}</div></div></div><div class="q-block"><div class="q-num">${q}</div><div class="q-date">Fecha: ${d}</div></div></div><div class="section-title">Cliente</div><div class="cli-grid"><div class="cli-item" style="grid-column:span 2"><label>Razón social / Nombre</label><span>${cliente.nombre}</span></div><div class="cli-item"><label>NIT / Cédula</label><span>${cliente.nit}</span></div><div class="cli-item" style="grid-column:span 2"><label>Dirección</label><span>${cliente.dir}, ${cliente.ciudad}</span></div><div class="cli-item"><label>Teléfono</label><span>${cliente.tel}</span></div><div class="cli-item"><label>Correo</label><span>${cliente.email}</span></div></div><div class="section-title">Detalle de productos</div><table class="table"><thead><tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:right">P. Unitario</th><th style="text-align:right">Subtotal</th></tr></thead><tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px">Sin productos</td></tr>'}</tbody></table><div class="totals"><div class="tot-row"><span>Subtotal:</span><span>${formatCOP(subtotal)}</span></div><div class="tot-row"><span>IVA:</span><span>${formatCOP(iva)}</span></div><div class="tot-row"><span>Descuento:</span><span>−${formatCOP(desc)}</span></div><div class="tot-row final"><span>Total a pagar:</span><span>${formatCOP(total)}</span></div></div>${obs ? `<div style="clear:both"></div><div class="section-title">Observaciones</div><div class="obs-box">${obs}</div>` : ''}<div style="clear:both"></div><div class="footer">${company.nombre} · NIT: ${company.nit} · ${company.tel} · ${company.email}<br>${company.dir}${company.web ? ' · ' + company.web : ''}<br>Cotización válida por 30 días.</div></body></html>`;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${q}</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:0;padding:0;text-align:center;} .page{max-width:780px;margin:0 auto;padding:24px 28px;text-align:left;} .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid ${currentCompany.theme}}.logo-circle{width:64px;height:64px;border-radius:50%;background:${currentCompany.theme};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;overflow:hidden}.comp-name{font-size:18px;font-weight:700;color:#111}.comp-sub{font-size:10px;color:#555;margin-top:3px}.q-block{text-align:right}.q-num{font-size:20px;font-weight:700;color:#111}.q-date{font-size:11px;color:#777;margin-top:2px}.section-title{font-size:10px;font-weight:700;color:${currentCompany.theme};text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px;border-bottom:0.5px solid #e0e0e0;padding-bottom:4px}.cli-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 14px;font-size:11px}.cli-item label{color:#888;display:block}.cli-item span{color:#222;font-weight:500}.container{margin-bottom:14px}.container label{font-size:10px;color:#888;display:block;margin-bottom:2px}.container span{font-weight:500;color:#111}.table{width:100%;border-collapse:collapse;font-size:11px}th{background:#f5f5f2;text-align:left;padding:6px 8px;font-weight:700;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1px solid #ddd}td{padding:6px 8px;border-bottom:0.5px solid #eee}.totals{float:right;margin-top:10px;min-width:240px}.tot-row{display:flex;justify-content:space-between;gap:30px;font-size:11px;padding:3px 0}.tot-row.final{border-top:1.5px solid ${currentCompany.theme};margin-top:4px;padding-top:6px;font-size:14px;font-weight:700;color:#111}.footer{margin-top:36px;padding-top:12px;border-top:0.5px solid #ccc;text-align:center;font-size:10px;color:#888}.obs-box{background:#fafaf8;border:0.5px solid #ddd;border-radius:6px;padding:8px 12px;font-size:11px;color:#444;margin-top:6px}</style></head><body><div class="page"><div class="header"><div class="logo-circle">${currentCompany.nombre.substring(0,2).toUpperCase()}</div><div><div class="comp-name">${currentCompany.nombre}</div><div class="comp-sub">NIT: ${currentCompany.nit} · ${currentCompany.tel} · ${currentCompany.email}<br>${currentCompany.dir}${currentCompany.web ? ' · ' + currentCompany.web : ''}${currentCompany.slogan ? '<br>' + currentCompany.slogan : ''}</div></div></div><div class="q-block"><div class="q-num">${q}</div><div class="q-date">Fecha: ${d}</div></div></div><div class="section-title">Cliente</div><div class="cli-grid"><div class="cli-item" style="grid-column:span 2"><label>Razón social / Nombre</label><span>${cliente.nombre}</span></div><div class="cli-item"><label>NIT / Cédula</label><span>${cliente.nit}</span></div><div class="cli-item" style="grid-column:span 2"><label>Dirección</label><span>${cliente.dir}, ${cliente.ciudad}</span></div><div class="cli-item"><label>Teléfono</label><span>${cliente.tel}</span></div><div class="cli-item"><label>Correo</label><span>${cliente.email}</span></div></div><div class="section-title">Detalle de productos</div><table class="table"><thead><tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:right">P. Unitario</th><th style="text-align:right">Subtotal</th></tr></thead><tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px">Sin productos</td></tr>'}</tbody></table><div class="totals"><div class="tot-row"><span>Subtotal:</span><span>${formatCOP(subtotal)}</span></div><div class="tot-row"><span>IVA:</span><span>${formatCOP(iva)}</span></div><div class="tot-row"><span>Descuento:</span><span>−${formatCOP(desc)}</span></div><div class="tot-row final"><span>Total a pagar:</span><span>${formatCOP(total)}</span></div></div>${obs ? `<div style="clear:both"></div><div class="section-title">Observaciones</div><div class="obs-box">${obs}</div>` : ''}<div style="clear:both"></div><div class="footer">${currentCompany.nombre} · NIT: ${currentCompany.nit} · ${currentCompany.tel} · ${currentCompany.email}<br>${currentCompany.dir}${currentCompany.web ? ' · ' + currentCompany.web : ''}<br>Cotización válida por 30 días.</div></body></html>`;
   const w = window.open('', '_blank');
   w.document.write(html);
   w.document.close();
@@ -815,6 +915,7 @@ function runStartup() {
   document.getElementById('headerDate').textContent = today.toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   setQuoteDate();
   setQuoteNum();
+  loadCompanyConfig();
   limpiarFormulario();
   renderFacturas();
   loadFacturas();
@@ -828,3 +929,4 @@ runStartup();
 </script>
 </body>
 </html>
+
