@@ -128,6 +128,9 @@
   .ticket-preview { background: #fff; color: #000; font-family: 'DM Mono', monospace; font-size: 12px; padding: 20px; border-radius: 8px; width: 300px; margin: 0 auto; }
   .ticket-preview .t-center { text-align: center; margin-bottom: 4px; }
   .ticket-preview .t-line { border-top: 1px dashed #aaa; margin: 8px 0; }
+  .logo-preview { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+  .logo-preview img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; border: 1px solid var(--border); }
+  .logo-preview span { color: var(--muted); font-size: 0.9rem; }
   .ticket-preview .t-row { display: flex; justify-content: space-between; margin: 3px 0; font-size: 11px; }
   .ticket-preview .t-bold { font-weight: 700; }
   .ticket-preview .t-title { font-size: 15px; font-weight: 900; text-align: center; margin-bottom: 2px; }
@@ -360,6 +363,13 @@
           <label>Slogan (opcional)</label>
           <input type="text" id="cfg_slogan" placeholder="Calidad en cada hilo">
         </div>
+        <div class="form-group full">
+          <label>Logo de la empresa</label>
+          <input type="file" id="cfg_logo" accept="image/*" onchange="handleCompanyLogoUpload(event)">
+          <div class="logo-preview" id="logoPreview">
+            <div id="logoPreviewText" style="color:var(--muted);font-size:0.9rem">Sin logo cargado</div>
+          </div>
+        </div>
       </div>
       <div class="form-grid" style="max-width:720px; margin-top: 10px;">
         <div class="form-group">
@@ -415,6 +425,7 @@ const company = {
   prefix: 'COT-',
   nextnum: 1,
   theme: '#007BFF',
+  logo: null,
 };
 
 let cotizacionRowId = 0;
@@ -438,6 +449,7 @@ function loadCompanyConfig() {
     const el = document.getElementById(id);
     if (el) el.value = company[key] || '';
   });
+  updateLogoPreview();
 }
 
 function saveCompanyConfig() {
@@ -451,6 +463,7 @@ function saveCompanyConfig() {
   company.slogan = document.getElementById('cfg_slogan').value || company.slogan;
   company.prefix = document.getElementById('cfg_prefix').value || company.prefix;
   company.nextnum = parseInt(document.getElementById('cfg_nextnum').value) || company.nextnum;
+  localStorage.setItem('company_logo', company.logo || '');
   setQuoteNum();
   showToast('✓ Datos de la empresa actualizados');
 }
@@ -469,8 +482,49 @@ function getCurrentCompany() {
     slogan: document.getElementById('cfg_slogan').value || company.slogan,
     prefix: document.getElementById('cfg_prefix').value || company.prefix,
     nextnum: parseInt(document.getElementById('cfg_nextnum').value) || company.nextnum,
-    theme: company.theme
+    theme: company.theme,
+    logo: company.logo
   };
+}
+
+function handleCompanyLogoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    company.logo = e.target.result;
+    localStorage.setItem('company_logo', company.logo);
+    updateLogoPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateLogoPreview() {
+  const preview = document.getElementById('logoPreview');
+  const previewText = document.getElementById('logoPreviewText');
+  preview.innerHTML = '';
+  if (company.logo) {
+    const img = document.createElement('img');
+    img.src = company.logo;
+    img.alt = 'Logo empresa';
+    img.style.width = '64px';
+    img.style.height = '64px';
+    img.style.borderRadius = '12px';
+    img.style.objectFit = 'cover';
+    preview.appendChild(img);
+    previewText.textContent = 'Logo cargado';
+    preview.appendChild(previewText);
+  } else {
+    previewText.textContent = 'Sin logo cargado';
+    preview.appendChild(previewText);
+  }
+}
+
+function loadCompanyLogoFromStorage() {
+  const storedLogo = localStorage.getItem('company_logo');
+  if (storedLogo) {
+    company.logo = storedLogo;
+  }
 }
 
 function addProducto() {
@@ -898,7 +952,7 @@ function printCotizacion() {
   const total = subtotal + iva - desc;
   const obs = document.getElementById('cot-obs').value;
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${q}</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:0;padding:0;text-align:center;} .page{max-width:780px;margin:0 auto;padding:24px 28px;text-align:left;} .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid ${currentCompany.theme}}.logo-circle{width:64px;height:64px;border-radius:50%;background:${currentCompany.theme};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;overflow:hidden}.comp-name{font-size:18px;font-weight:700;color:#111}.comp-sub{font-size:10px;color:#555;margin-top:3px}.q-block{text-align:right}.q-num{font-size:20px;font-weight:700;color:#111}.q-date{font-size:11px;color:#777;margin-top:2px}.section-title{font-size:10px;font-weight:700;color:${currentCompany.theme};text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px;border-bottom:0.5px solid #e0e0e0;padding-bottom:4px}.cli-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 14px;font-size:11px}.cli-item label{color:#888;display:block}.cli-item span{color:#222;font-weight:500}.container{margin-bottom:14px}.container label{font-size:10px;color:#888;display:block;margin-bottom:2px}.container span{font-weight:500;color:#111}.table{width:100%;border-collapse:collapse;font-size:11px}th{background:#f5f5f2;text-align:left;padding:6px 8px;font-weight:700;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1px solid #ddd}td{padding:6px 8px;border-bottom:0.5px solid #eee}.totals{float:right;margin-top:10px;min-width:240px}.tot-row{display:flex;justify-content:space-between;gap:30px;font-size:11px;padding:3px 0}.tot-row.final{border-top:1.5px solid ${currentCompany.theme};margin-top:4px;padding-top:6px;font-size:14px;font-weight:700;color:#111}.footer{margin-top:36px;padding-top:12px;border-top:0.5px solid #ccc;text-align:center;font-size:10px;color:#888}.obs-box{background:#fafaf8;border:0.5px solid #ddd;border-radius:6px;padding:8px 12px;font-size:11px;color:#444;margin-top:6px}</style></head><body><div class="page"><div class="header"><div class="logo-circle">${currentCompany.nombre.substring(0,2).toUpperCase()}</div><div><div class="comp-name">${currentCompany.nombre}</div><div class="comp-sub">NIT: ${currentCompany.nit} · ${currentCompany.tel} · ${currentCompany.email}<br>${currentCompany.dir}${currentCompany.web ? ' · ' + currentCompany.web : ''}${currentCompany.slogan ? '<br>' + currentCompany.slogan : ''}</div></div></div><div class="q-block"><div class="q-num">${q}</div><div class="q-date">Fecha: ${d}</div></div></div><div class="section-title">Cliente</div><div class="cli-grid"><div class="cli-item" style="grid-column:span 2"><label>Razón social / Nombre</label><span>${cliente.nombre}</span></div><div class="cli-item"><label>NIT / Cédula</label><span>${cliente.nit}</span></div><div class="cli-item" style="grid-column:span 2"><label>Dirección</label><span>${cliente.dir}, ${cliente.ciudad}</span></div><div class="cli-item"><label>Teléfono</label><span>${cliente.tel}</span></div><div class="cli-item"><label>Correo</label><span>${cliente.email}</span></div></div><div class="section-title">Detalle de productos</div><table class="table"><thead><tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:right">P. Unitario</th><th style="text-align:right">Subtotal</th></tr></thead><tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px">Sin productos</td></tr>'}</tbody></table><div class="totals"><div class="tot-row"><span>Subtotal:</span><span>${formatCOP(subtotal)}</span></div><div class="tot-row"><span>IVA:</span><span>${formatCOP(iva)}</span></div><div class="tot-row"><span>Descuento:</span><span>−${formatCOP(desc)}</span></div><div class="tot-row final"><span>Total a pagar:</span><span>${formatCOP(total)}</span></div></div>${obs ? `<div style="clear:both"></div><div class="section-title">Observaciones</div><div class="obs-box">${obs}</div>` : ''}<div style="clear:both"></div><div class="footer">${currentCompany.nombre} · NIT: ${currentCompany.nit} · ${currentCompany.tel} · ${currentCompany.email}<br>${currentCompany.dir}${currentCompany.web ? ' · ' + currentCompany.web : ''}<br>Cotización válida por 30 días.</div></body></html>`;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${q}</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:0;padding:0;display:flex;justify-content:center;} .page{width:780px;margin:0 auto;padding:24px 28px;text-align:left;} .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid ${currentCompany.theme}}.logo-circle{width:64px;height:64px;border-radius:50%;background:${currentCompany.theme};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;overflow:hidden}.comp-name{font-size:18px;font-weight:700;color:#111}.comp-sub{font-size:10px;color:#555;margin-top:3px}.q-block{text-align:right}.q-num{font-size:20px;font-weight:700;color:#111}.q-date{font-size:11px;color:#777;margin-top:2px}.section-title{font-size:10px;font-weight:700;color:${currentCompany.theme};text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px;border-bottom:0.5px solid #e0e0e0;padding-bottom:4px}.cli-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 14px;font-size:11px}.cli-item label{color:#888;display:block}.cli-item span{color:#222;font-weight:500}.container{margin-bottom:14px}.container label{font-size:10px;color:#888;display:block;margin-bottom:2px}.container span{font-weight:500;color:#111}.table{width:100%;border-collapse:collapse;font-size:11px}th{background:#f5f5f2;text-align:left;padding:6px 8px;font-weight:700;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1px solid #ddd}td{padding:6px 8px;border-bottom:0.5px solid #eee}.totals{float:right;margin-top:10px;min-width:240px}.tot-row{display:flex;justify-content:space-between;gap:30px;font-size:11px;padding:3px 0}.tot-row.final{border-top:1.5px solid ${currentCompany.theme};margin-top:4px;padding-top:6px;font-size:14px;font-weight:700;color:#111}.footer{margin-top:36px;padding-top:12px;border-top:0.5px solid #ccc;text-align:center;font-size:10px;color:#888}.logo-print{width:64px;height:64px;border-radius:12px;object-fit:cover;margin-bottom:8px}.obs-box{background:#fafaf8;border:0.5px solid #ddd;border-radius:6px;padding:8px 12px;font-size:11px;color:#444;margin-top:6px}</style></head><body><div class="page"><div class="header"><div style="display:flex;gap:12px;align-items:center"><div>${currentCompany.logo ? `<img class="logo-print" src="${currentCompany.logo}" alt="Logo empresa">` : `<div class="logo-circle">${currentCompany.nombre.substring(0,2).toUpperCase()}</div>`}</div><div><div class="comp-name">${currentCompany.nombre}</div><div class="comp-sub">NIT: ${currentCompany.nit} · ${currentCompany.tel} · ${currentCompany.email}<br>${currentCompany.dir}${currentCompany.web ? ' · ' + currentCompany.web : ''}${currentCompany.slogan ? '<br>' + currentCompany.slogan : ''}</div></div></div><div class="q-block"><div class="q-num">${q}</div><div class="q-date">Fecha: ${d}</div></div></div><div class="section-title">Cliente</div><div class="cli-grid"><div class="cli-item" style="grid-column:span 2"><label>Razón social / Nombre</label><span>${cliente.nombre}</span></div><div class="cli-item"><label>NIT / Cédula</label><span>${cliente.nit}</span></div><div class="cli-item" style="grid-column:span 2"><label>Dirección</label><span>${cliente.dir}, ${cliente.ciudad}</span></div><div class="cli-item"><label>Teléfono</label><span>${cliente.tel}</span></div><div class="cli-item"><label>Correo</label><span>${cliente.email}</span></div></div><div class="section-title">Detalle de productos</div><table class="table"><thead><tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:right">P. Unitario</th><th style="text-align:right">Subtotal</th></tr></thead><tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px">Sin productos</td></tr>'}</tbody></table><div class="totals"><div class="tot-row"><span>Subtotal:</span><span>${formatCOP(subtotal)}</span></div><div class="tot-row"><span>IVA:</span><span>${formatCOP(iva)}</span></div><div class="tot-row"><span>Descuento:</span><span>−${formatCOP(desc)}</span></div><div class="tot-row final"><span>Total a pagar:</span><span>${formatCOP(total)}</span></div></div>${obs ? `<div style="clear:both"></div><div class="section-title">Observaciones</div><div class="obs-box">${obs}</div>` : ''}<div style="clear:both"></div><div class="footer">${currentCompany.nombre} · NIT: ${currentCompany.nit} · ${currentCompany.tel} · ${currentCompany.email}<br>${currentCompany.dir}${currentCompany.web ? ' · ' + currentCompany.web : ''}<br>Cotización válida por 30 días.</div></body></html>`;
   const w = window.open('', '_blank');
   w.document.write(html);
   w.document.close();
@@ -915,6 +969,7 @@ function runStartup() {
   document.getElementById('headerDate').textContent = today.toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   setQuoteDate();
   setQuoteNum();
+  loadCompanyLogoFromStorage();
   loadCompanyConfig();
   limpiarFormulario();
   renderFacturas();
